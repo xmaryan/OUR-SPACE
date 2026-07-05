@@ -333,9 +333,38 @@ class MarkIn(BaseModel):
     grade: str
 
 
+class CollegeIn(BaseModel):
+    name: str
+    short: Optional[str] = ""
+
+
+class CourseIn(BaseModel):
+    name: str
+    college_id: str
+    duration_years: int = 3
+
+
+class SubjectIn(BaseModel):
+    name: str
+    code: str
+    course_id: str
+    semester: int
+
+
 async def _lookup_subject_name(subject_id: str) -> str:
     s = await db.subjects.find_one({"id": subject_id}, {"_id": 0})
     return s.get("name", "Subject") if s else "Subject"
+
+
+def _admin_scope(college_id: Optional[str], course_id: Optional[str], semester: Optional[int]) -> dict:
+    q: dict = {}
+    if college_id:
+        q["college_id"] = college_id
+    if course_id:
+        q["course_id"] = course_id
+    if semester is not None:
+        q["semester"] = semester
+    return q
 
 
 @api.get("/admin/stats")
@@ -348,6 +377,8 @@ async def admin_stats(u=Depends(admin_only)):
         "assignments": await db.assignments.count_documents({}),
         "messages": await db.messages.count_documents({}),
         "groups": await db.groups.count_documents({}),
+        "colleges": await db.colleges.count_documents({}),
+        "courses": await db.courses.count_documents({}),
     }
 
 
@@ -358,8 +389,129 @@ async def admin_students(u=Depends(admin_only)):
 
 
 @api.get("/admin/subjects")
-async def admin_subjects(u=Depends(admin_only)):
-    return clean(await db.subjects.find({}, {"_id": 0}).to_list(200))
+async def admin_subjects(course_id: Optional[str] = None, u=Depends(admin_only)):
+    q = {"course_id": course_id} if course_id else {}
+    return clean(await db.subjects.find(q, {"_id": 0}).to_list(500))
+
+
+# ---- Admin list endpoints (with filters) ----
+@api.get("/admin/list/notices")
+async def admin_list_notices(college_id: Optional[str] = None, u=Depends(admin_only)):
+    q = {"college_id": college_id} if college_id else {}
+    return clean(await db.notices.find(q, {"_id": 0}).sort("date", -1).to_list(500))
+
+
+@api.get("/admin/list/materials")
+async def admin_list_materials(
+    college_id: Optional[str] = None, course_id: Optional[str] = None,
+    semester: Optional[int] = None, u=Depends(admin_only)):
+    q = _admin_scope(college_id, course_id, semester)
+    return clean(await db.study_material.find(q, {"_id": 0}).sort("created_at", -1).to_list(500))
+
+
+@api.get("/admin/list/pyqs")
+async def admin_list_pyqs(
+    college_id: Optional[str] = None, course_id: Optional[str] = None,
+    semester: Optional[int] = None, u=Depends(admin_only)):
+    q = _admin_scope(college_id, course_id, semester)
+    return clean(await db.pyqs.find(q, {"_id": 0}).sort("year", -1).to_list(500))
+
+
+@api.get("/admin/list/assignments")
+async def admin_list_assignments(
+    college_id: Optional[str] = None, course_id: Optional[str] = None,
+    semester: Optional[int] = None, u=Depends(admin_only)):
+    q = _admin_scope(college_id, course_id, semester)
+    return clean(await db.assignments.find(q, {"_id": 0}).sort("due_date", 1).to_list(500))
+
+
+# ---- Colleges CRUD ----
+@api.get("/admin/list/colleges")
+async def admin_list_colleges(u=Depends(admin_only)):
+    return clean(await db.colleges.find({}, {"_id": 0}).to_list(200))
+
+
+@api.post("/admin/colleges")
+async def admin_create_college(body: CollegeIn, u=Depends(admin_only)):
+    doc = {"id": str(uuid.uuid4()), "name": body.name, "short": body.short or ""}
+    await db.colleges.insert_one(doc)
+    return clean(doc)
+
+
+@api.put("/admin/colleges/{cid}")
+async def admin_update_college(cid: str, body: CollegeIn, u=Depends(admin_only)):
+    r = await db.colleges.update_one({"id": cid}, {"$set": body.dict()})
+    if r.matched_count == 0:
+        raise HTTPException(404, "College not found")
+    return {"ok": True}
+
+
+@api.delete("/admin/colleges/{cid}")
+async def admin_delete_college(cid: str, u=Depends(admin_only)):
+    if await db.users.count_documents({"college_id": cid}):
+        raise HTTPException(400, "Cannot delete: students belong to this college")
+    await db.colleges.delete_one({"id": cid})
+    return {"ok": True}
+
+
+# ---- Courses CRUD ----
+@api.get("/admin/list/courses")
+async def admin_list_courses(college_id: Optional[str] = None, u=Depends(admin_only)):
+    q = {"college_id": college_id} if college_id else {}
+    return clean(await db.courses.find(q, {"_id": 0}).to_list(500))
+
+
+@api.post("/admin/courses")
+async def admin_create_course(body: CourseIn, u=Depends(admin_only)):
+    doc = {"id": str(uuid.uuid4()), **body.dict()}
+    await db.courses.insert_one(doc)
+    return clean(doc)
+
+
+@api.put("/admin/courses/{cid}")
+async def admin_update_course(cid: str, body: CourseIn, u=Depends(admin_only)):
+    r = await db.courses.update_one({"id": cid}, {"$set": body.dict()})
+    if r.matched_count == 0:
+        raise HTTPException(404, "Course not found")
+    return {"ok": True}
+
+
+@api.delete("/admin/courses/{cid}")
+async def admin_delete_course(cid: str, u=Depends(admin_only)):
+    if await db.users.count_documents({"course_id": cid}):
+        raise HTTPException(400, "Cannot delete: students are enrolled in this course")
+    await db.courses.delete_one({"id": cid})
+    return {"ok": True}
+
+
+# ---- Subjects CRUD ----
+@api.get("/admin/list/subjects")
+async def admin_list_subjects_all(u=Depends(admin_only)):
+    return clean(await db.subjects.find({}, {"_id": 0}).to_list(1000))
+
+
+@api.post("/admin/subjects")
+async def admin_create_subject(body: SubjectIn, u=Depends(admin_only)):
+    sid = str(uuid.uuid4())
+    doc = {"id": sid, **body.dict()}
+    await db.subjects.insert_one(doc)
+    # auto-create chat group
+    course = await db.courses.find_one({"id": body.course_id})
+    if course:
+        await db.groups.update_one({"id": f"grp-{sid}"}, {"$set": {
+            "id": f"grp-{sid}",
+            "name": f"{course['name']} Sem {body.semester} - {body.name}",
+            "college_id": course["college_id"], "course_id": body.course_id,
+            "semester": body.semester, "subject_id": sid,
+        }}, upsert=True)
+    return clean(doc)
+
+
+@api.delete("/admin/subjects/{sid}")
+async def admin_delete_subject(sid: str, u=Depends(admin_only)):
+    await db.subjects.delete_one({"id": sid})
+    await db.groups.delete_one({"subject_id": sid})
+    return {"ok": True}
 
 
 # ---- Notices CRUD ----
@@ -560,6 +712,83 @@ async def seed():
             upsert=True,
         )
         logger.info("seed: admin user created")
+
+    # v2 seed: additional colleges + courses (idempotent)
+    extra_colleges = [
+        {"id": "col-2", "name": "Mumbai University", "short": "MU"},
+        {"id": "col-3", "name": "Bangalore Institute of Technology", "short": "BIT"},
+        {"id": "col-4", "name": "Pune University", "short": "PU"},
+        {"id": "col-5", "name": "Chennai Institute of Science", "short": "CIS"},
+    ]
+    for c in extra_colleges:
+        await db.colleges.update_one({"id": c["id"]}, {"$set": c}, upsert=True)
+
+    extra_courses = [
+        {"id": "crs-bba-du", "college_id": "col-1", "name": "BBA", "duration_years": 3},
+        {"id": "crs-bcom-du", "college_id": "col-1", "name": "B.Com", "duration_years": 3},
+        {"id": "crs-mba-mu", "college_id": "col-2", "name": "MBA", "duration_years": 2},
+        {"id": "crs-bba-mu", "college_id": "col-2", "name": "BBA", "duration_years": 3},
+        {"id": "crs-bcom-mu", "college_id": "col-2", "name": "B.Com", "duration_years": 3},
+        {"id": "crs-btech-cse-bit", "college_id": "col-3", "name": "B.Tech CSE", "duration_years": 4},
+        {"id": "crs-btech-ece-bit", "college_id": "col-3", "name": "B.Tech ECE", "duration_years": 4},
+        {"id": "crs-mca-bit", "college_id": "col-3", "name": "MCA", "duration_years": 2},
+        {"id": "crs-bca-pu", "college_id": "col-4", "name": "BCA", "duration_years": 3},
+        {"id": "crs-bcom-pu", "college_id": "col-4", "name": "B.Com", "duration_years": 3},
+        {"id": "crs-btech-cse-cis", "college_id": "col-5", "name": "B.Tech CSE", "duration_years": 4},
+        {"id": "crs-bsc-it-cis", "college_id": "col-5", "name": "B.Sc IT", "duration_years": 3},
+    ]
+    for c in extra_courses:
+        await db.courses.update_one({"id": c["id"]}, {"$set": c}, upsert=True)
+
+    # sample subjects + groups for MBA (Mumbai) and B.Tech CSE (Bangalore) so demo shows variety
+    extra_subjects = [
+        {"id": "mba-sub-1", "course_id": "crs-mba-mu", "semester": 1, "name": "Marketing Management", "code": "MBA101"},
+        {"id": "mba-sub-2", "course_id": "crs-mba-mu", "semester": 1, "name": "Financial Accounting", "code": "MBA102"},
+        {"id": "mba-sub-3", "course_id": "crs-mba-mu", "semester": 1, "name": "Organizational Behavior", "code": "MBA103"},
+        {"id": "bit-sub-1", "course_id": "crs-btech-cse-bit", "semester": 3, "name": "Data Structures", "code": "CSE301"},
+        {"id": "bit-sub-2", "course_id": "crs-btech-cse-bit", "semester": 3, "name": "Discrete Mathematics", "code": "CSE302"},
+        {"id": "bit-sub-3", "course_id": "crs-btech-cse-bit", "semester": 3, "name": "Digital Logic Design", "code": "CSE303"},
+    ]
+    for s in extra_subjects:
+        await db.subjects.update_one({"id": s["id"]}, {"$set": s}, upsert=True)
+        course = await db.courses.find_one({"id": s["course_id"]})
+        college_id = course["college_id"] if course else "col-1"
+        await db.groups.update_one({"id": f"grp-{s['id']}"}, {"$set": {
+            "id": f"grp-{s['id']}",
+            "name": f"{course['name']} Sem {s['semester']} - {s['name']}" if course else s["name"],
+            "college_id": college_id, "course_id": s["course_id"],
+            "semester": s["semester"], "subject_id": s["id"],
+        }}, upsert=True)
+
+    # sample content for the extra courses so admin sees variety
+    sample_pdf = "https://www.orimi.com/pdf-test.pdf"
+    await db.study_material.update_one({"id": "mba-m1"}, {"$set": {
+        "id": "mba-m1", "college_id": "col-2", "course_id": "crs-mba-mu", "semester": 1,
+        "subject_id": "mba-sub-1", "subject_name": "Marketing Management",
+        "title": "MBA-only: 4Ps of Marketing Framework", "url": sample_pdf,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }}, upsert=True)
+    await db.study_material.update_one({"id": "bit-m1"}, {"$set": {
+        "id": "bit-m1", "college_id": "col-3", "course_id": "crs-btech-cse-bit", "semester": 3,
+        "subject_id": "bit-sub-1", "subject_name": "Data Structures",
+        "title": "B.Tech CSE: Binary Trees & AVL Rotations", "url": sample_pdf,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }}, upsert=True)
+    await db.notices.update_one({"id": "n-mu-1"}, {"$set": {
+        "id": "n-mu-1", "college_id": "col-2",
+        "title": "MU Convocation Ceremony on Feb 20",
+        "description": "All graduating students are invited to the annual convocation at the main auditorium.",
+        "category": "Events", "author": "MU Administration",
+        "date": datetime.now(timezone.utc).isoformat(),
+    }}, upsert=True)
+    await db.notices.update_one({"id": "n-bit-1"}, {"$set": {
+        "id": "n-bit-1", "college_id": "col-3",
+        "title": "BIT: Google campus recruitment drive",
+        "description": "Pre-final year students eligible for Google SDE internship. Register at the T&P portal.",
+        "category": "Placements", "author": "BIT T&P Cell",
+        "date": datetime.now(timezone.utc).isoformat(),
+    }}, upsert=True)
+
     if await db.users.count_documents({"username": "alex"}):
         logger.info("seed: already present")
         return

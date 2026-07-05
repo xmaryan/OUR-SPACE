@@ -7,12 +7,14 @@ import { Shimmer } from "@/src/shimmer";
 
 const CARDS = [
   { key: "students", label: "Students", icon: "account-group", color: "#3F51B5" },
+  { key: "colleges", label: "Colleges", icon: "office-building", color: "#7E57C2" },
+  { key: "courses", label: "Courses", icon: "school", color: "#009688" },
   { key: "notices", label: "Notices", icon: "bell", color: "#B3261E" },
-  { key: "materials", label: "Study Material", icon: "book-open", color: "#7E57C2" },
-  { key: "pyqs", label: "PYQs", icon: "file-document", color: "#009688" },
-  { key: "assignments", label: "Assignments", icon: "clipboard-text", color: "#795900" },
-  { key: "groups", label: "Chat Groups", icon: "forum", color: "#0062A0" },
-  { key: "messages", label: "Total Messages", icon: "message-text", color: "#386A20" },
+  { key: "materials", label: "Study Material", icon: "book-open", color: "#0062A0" },
+  { key: "pyqs", label: "PYQs", icon: "file-document", color: "#795900" },
+  { key: "assignments", label: "Assignments", icon: "clipboard-text", color: "#386A20" },
+  { key: "groups", label: "Chat Groups", icon: "forum", color: "#3F51B5" },
+  { key: "messages", label: "Total Messages", icon: "message-text", color: "#009688" },
 ];
 
 export default function AdminDashboard() {

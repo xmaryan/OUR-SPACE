@@ -7,6 +7,8 @@ import { colors, spacing, radius } from "@/src/theme";
 
 const NAV = [
   { key: "/admin", label: "Dashboard", icon: "view-dashboard" },
+  { key: "/admin/colleges", label: "Colleges", icon: "office-building" },
+  { key: "/admin/courses", label: "Courses", icon: "school" },
   { key: "/admin/notices", label: "Notices", icon: "bell" },
   { key: "/admin/materials", label: "Study Material", icon: "book-open" },
   { key: "/admin/pyqs", label: "PYQs", icon: "file-document" },

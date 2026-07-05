@@ -23,13 +23,19 @@ export default function Register() {
   useEffect(() => {
     (async () => {
       const c = await api.get("/colleges");
-      const co = await api.get("/courses");
       setColleges(c.data);
-      setCourses(co.data);
       if (c.data[0]) setForm((f) => ({ ...f, college_id: c.data[0].id }));
-      if (co.data[0]) setForm((f) => ({ ...f, course_id: co.data[0].id }));
     })();
   }, []);
+
+  useEffect(() => {
+    if (!form.college_id) return;
+    (async () => {
+      const co = await api.get("/courses", { params: { college_id: form.college_id } });
+      setCourses(co.data);
+      setForm((f) => ({ ...f, course_id: co.data[0]?.id ?? "" }));
+    })();
+  }, [form.college_id]);
 
   const submit = async () => {
     if (!form.full_name || !form.username || !form.password || !form.roll_number) {
