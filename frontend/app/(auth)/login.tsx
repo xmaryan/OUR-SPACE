@@ -70,13 +70,8 @@ export default function Login() {
         <Pressable testID="login-submit-button" onPress={submit} style={({ pressed }) => [styles.cta, pressed && { opacity: 0.85 }]} disabled={busy}>
           <Text style={styles.ctaText}>{busy ? "Signing in..." : "Sign in"}</Text>
         </Pressable>
-        <View style={styles.demoBox}>
-          <Text style={styles.demoTitle}>Demo login</Text>
-          <Text style={styles.demoText}>Student: alex / alex1234</Text>
-          <Text style={styles.demoText}>Admin:   admin / admin1234  (opens admin panel)</Text>
-        </View>
         <View style={styles.row}>
-          <Text style={styles.muted}>New to OurSpace?  </Text>
+          <Text style={styles.muted}>New to Our Space?  </Text>
           <Link href="/(auth)/register" asChild>
             <Pressable testID="go-register-link"><Text style={styles.link}>Create account</Text></Pressable>
           </Link>
