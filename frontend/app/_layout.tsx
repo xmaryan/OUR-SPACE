@@ -19,9 +19,15 @@ function Gate() {
   useEffect(() => {
     if (loading) return;
     const inAuthGroup = segments[0] === "(auth)";
+    const inAdmin = segments[0] === "admin";
     const atRoot = segments.length === 0;
-    if (!user && !inAuthGroup) router.replace("/(auth)/login");
-    else if (user && (inAuthGroup || atRoot)) router.replace("/(tabs)/home");
+    if (!user && !inAuthGroup) {
+      router.replace("/(auth)/login");
+    } else if (user?.role === "admin") {
+      if (!inAdmin) router.replace("/admin");
+    } else if (user && (inAuthGroup || atRoot || inAdmin)) {
+      router.replace("/(tabs)/home");
+    }
   }, [user, loading, segments, router]);
 
   return <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "#F5F6FA" } }} />;

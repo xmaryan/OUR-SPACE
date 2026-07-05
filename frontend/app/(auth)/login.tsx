@@ -71,7 +71,8 @@ export default function Login() {
         </Pressable>
         <View style={styles.demoBox}>
           <Text style={styles.demoTitle}>Demo login</Text>
-          <Text style={styles.demoText}>Username: alex   •   Password: alex1234</Text>
+          <Text style={styles.demoText}>Student: alex / alex1234</Text>
+          <Text style={styles.demoText}>Admin:   admin / admin1234  (opens admin panel)</Text>
         </View>
         <View style={styles.row}>
           <Text style={styles.muted}>New to OurSpace?  </Text>

@@ -103,6 +103,12 @@ async def current_user(cred: HTTPAuthorizationCredentials = Depends(bearer)):
     return user
 
 
+async def admin_only(user=Depends(current_user)):
+    if user.get("role") != "admin":
+        raise HTTPException(403, "Admin access required")
+    return user
+
+
 def clean(d):
     if isinstance(d, list):
         return [clean(x) for x in d]
@@ -298,6 +304,230 @@ async def send_message(group_id: str, body: MessageIn, user=Depends(current_user
     return clean(doc)
 
 
+# ---------- ADMIN endpoints ----------
+class NoticeIn(BaseModel):
+    title: str
+    description: str
+    category: str
+    author: str
+    college_id: Optional[str] = "col-1"
+
+
+class StudyItemIn(BaseModel):
+    title: str
+    subject_id: str
+    url: str
+    year: Optional[int] = None
+    due_date: Optional[str] = None
+    college_id: Optional[str] = "col-1"
+    course_id: Optional[str] = "crs-1"
+    semester: Optional[int] = 3
+
+
+class MarkIn(BaseModel):
+    user_id: str
+    subject_id: str
+    internal: int
+    external: int
+    total: int
+    grade: str
+
+
+async def _lookup_subject_name(subject_id: str) -> str:
+    s = await db.subjects.find_one({"id": subject_id}, {"_id": 0})
+    return s.get("name", "Subject") if s else "Subject"
+
+
+@api.get("/admin/stats")
+async def admin_stats(u=Depends(admin_only)):
+    return {
+        "students": await db.users.count_documents({"role": "student"}),
+        "notices": await db.notices.count_documents({}),
+        "materials": await db.study_material.count_documents({}),
+        "pyqs": await db.pyqs.count_documents({}),
+        "assignments": await db.assignments.count_documents({}),
+        "messages": await db.messages.count_documents({}),
+        "groups": await db.groups.count_documents({}),
+    }
+
+
+@api.get("/admin/students")
+async def admin_students(u=Depends(admin_only)):
+    rows = await db.users.find({"role": "student"}, {"_id": 0, "password": 0}).to_list(500)
+    return clean(rows)
+
+
+@api.get("/admin/subjects")
+async def admin_subjects(u=Depends(admin_only)):
+    return clean(await db.subjects.find({}, {"_id": 0}).to_list(200))
+
+
+# ---- Notices CRUD ----
+@api.post("/admin/notices")
+async def admin_create_notice(body: NoticeIn, u=Depends(admin_only)):
+    doc = {
+        "id": str(uuid.uuid4()),
+        "college_id": body.college_id,
+        "title": body.title,
+        "description": body.description,
+        "category": body.category,
+        "author": body.author,
+        "date": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.notices.insert_one(doc)
+    return clean(doc)
+
+
+@api.put("/admin/notices/{nid}")
+async def admin_update_notice(nid: str, body: NoticeIn, u=Depends(admin_only)):
+    r = await db.notices.update_one({"id": nid}, {"$set": body.dict()})
+    if r.matched_count == 0:
+        raise HTTPException(404, "Notice not found")
+    return {"ok": True}
+
+
+@api.delete("/admin/notices/{nid}")
+async def admin_delete_notice(nid: str, u=Depends(admin_only)):
+    await db.notices.delete_one({"id": nid})
+    return {"ok": True}
+
+
+# ---- Study Material CRUD ----
+@api.post("/admin/materials")
+async def admin_create_material(body: StudyItemIn, u=Depends(admin_only)):
+    doc = {
+        "id": str(uuid.uuid4()),
+        "college_id": body.college_id,
+        "course_id": body.course_id,
+        "semester": body.semester,
+        "subject_id": body.subject_id,
+        "subject_name": await _lookup_subject_name(body.subject_id),
+        "title": body.title,
+        "url": body.url,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.study_material.insert_one(doc)
+    return clean(doc)
+
+
+@api.put("/admin/materials/{mid}")
+async def admin_update_material(mid: str, body: StudyItemIn, u=Depends(admin_only)):
+    payload = body.dict()
+    payload["subject_name"] = await _lookup_subject_name(body.subject_id)
+    r = await db.study_material.update_one({"id": mid}, {"$set": payload})
+    if r.matched_count == 0:
+        raise HTTPException(404, "Not found")
+    return {"ok": True}
+
+
+@api.delete("/admin/materials/{mid}")
+async def admin_delete_material(mid: str, u=Depends(admin_only)):
+    await db.study_material.delete_one({"id": mid})
+    return {"ok": True}
+
+
+# ---- PYQs CRUD ----
+@api.post("/admin/pyqs")
+async def admin_create_pyq(body: StudyItemIn, u=Depends(admin_only)):
+    doc = {
+        "id": str(uuid.uuid4()),
+        "college_id": body.college_id,
+        "course_id": body.course_id,
+        "semester": body.semester,
+        "subject_id": body.subject_id,
+        "subject_name": await _lookup_subject_name(body.subject_id),
+        "title": body.title,
+        "year": body.year or datetime.now().year,
+        "url": body.url,
+    }
+    await db.pyqs.insert_one(doc)
+    return clean(doc)
+
+
+@api.put("/admin/pyqs/{pid}")
+async def admin_update_pyq(pid: str, body: StudyItemIn, u=Depends(admin_only)):
+    payload = body.dict()
+    payload["subject_name"] = await _lookup_subject_name(body.subject_id)
+    r = await db.pyqs.update_one({"id": pid}, {"$set": payload})
+    if r.matched_count == 0:
+        raise HTTPException(404, "Not found")
+    return {"ok": True}
+
+
+@api.delete("/admin/pyqs/{pid}")
+async def admin_delete_pyq(pid: str, u=Depends(admin_only)):
+    await db.pyqs.delete_one({"id": pid})
+    return {"ok": True}
+
+
+# ---- Assignments CRUD ----
+@api.post("/admin/assignments")
+async def admin_create_assignment(body: StudyItemIn, u=Depends(admin_only)):
+    doc = {
+        "id": str(uuid.uuid4()),
+        "college_id": body.college_id,
+        "course_id": body.course_id,
+        "semester": body.semester,
+        "subject_id": body.subject_id,
+        "subject_name": await _lookup_subject_name(body.subject_id),
+        "title": body.title,
+        "due_date": body.due_date or (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
+        "url": body.url,
+    }
+    await db.assignments.insert_one(doc)
+    return clean(doc)
+
+
+@api.put("/admin/assignments/{aid}")
+async def admin_update_assignment(aid: str, body: StudyItemIn, u=Depends(admin_only)):
+    payload = body.dict()
+    payload["subject_name"] = await _lookup_subject_name(body.subject_id)
+    r = await db.assignments.update_one({"id": aid}, {"$set": payload})
+    if r.matched_count == 0:
+        raise HTTPException(404, "Not found")
+    return {"ok": True}
+
+
+@api.delete("/admin/assignments/{aid}")
+async def admin_delete_assignment(aid: str, u=Depends(admin_only)):
+    await db.assignments.delete_one({"id": aid})
+    return {"ok": True}
+
+
+# ---- Marks CRUD ----
+@api.get("/admin/marks/{user_id}")
+async def admin_get_student_marks(user_id: str, u=Depends(admin_only)):
+    rows = await db.marks.find({"user_id": user_id}, {"_id": 0}).to_list(200)
+    subs = await db.subjects.find({}, {"_id": 0}).to_list(500)
+    sub_map = {s["id"]: s for s in subs}
+    for r in rows:
+        s = sub_map.get(r["subject_id"], {})
+        r["subject_name"] = s.get("name", "Subject")
+        r["subject_code"] = s.get("code", "")
+    return clean(rows)
+
+
+@api.post("/admin/marks")
+async def admin_create_mark(body: MarkIn, u=Depends(admin_only)):
+    doc = {"id": str(uuid.uuid4()), **body.dict()}
+    await db.marks.insert_one(doc)
+    return clean(doc)
+
+
+@api.put("/admin/marks/{mid}")
+async def admin_update_mark(mid: str, body: MarkIn, u=Depends(admin_only)):
+    r = await db.marks.update_one({"id": mid}, {"$set": body.dict()})
+    if r.matched_count == 0:
+        raise HTTPException(404, "Not found")
+    return {"ok": True}
+
+
+@api.delete("/admin/marks/{mid}")
+async def admin_delete_mark(mid: str, u=Depends(admin_only)):
+    await db.marks.delete_one({"id": mid})
+    return {"ok": True}
+
+
 app.include_router(api)
 
 app.add_middleware(
@@ -311,6 +541,25 @@ app.add_middleware(
 
 # ---------- Seed ----------
 async def seed():
+    # ensure admin exists even on already-seeded DBs
+    if not await db.users.find_one({"username": "admin"}):
+        await db.users.update_one(
+            {"id": "adm-1"},
+            {"$set": {
+                "id": "adm-1",
+                "full_name": "System Administrator",
+                "username": "admin",
+                "password": hash_pw("admin1234"),
+                "college_id": "col-1",
+                "course_id": "crs-1",
+                "semester": 0,
+                "roll_number": "ADMIN",
+                "role": "admin",
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            }},
+            upsert=True,
+        )
+        logger.info("seed: admin user created")
     if await db.users.count_documents({"username": "alex"}):
         logger.info("seed: already present")
         return
@@ -377,6 +626,23 @@ async def seed():
             "semester": 3,
             "roll_number": "BCA-2023-046",
             "role": "student",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }},
+        upsert=True,
+    )
+    # admin user
+    await db.users.update_one(
+        {"id": "adm-1"},
+        {"$set": {
+            "id": "adm-1",
+            "full_name": "System Administrator",
+            "username": "admin",
+            "password": hash_pw("admin1234"),
+            "college_id": "col-1",
+            "course_id": "crs-1",
+            "semester": 0,
+            "roll_number": "ADMIN",
+            "role": "admin",
             "created_at": datetime.now(timezone.utc).isoformat(),
         }},
         upsert=True,
