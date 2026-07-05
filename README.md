@@ -441,26 +441,6 @@ This pattern is called **row-level filtering** and is used by every serious SaaS
 8. Click **Save**
 9. The new content appears **instantly** in the student app for all matching students
 
----
-
-## 🚢 Publishing to Play Store / App Store
-
-**In Emergent:**
-1. Click **"Publish"** (top-right corner)
-2. Choose your target: iOS IPA / Android APK / both
-3. Provide your Apple Developer / Google Play credentials when prompted
-4. Emergent builds and delivers the store-ready files
-
-**The app will show up on the phone as:**
-- **Name:** Our Space
-- **Icon:** The cosmic planet logo (`assets/images/icon.png`)
-- **Splash:** Same logo, animated on black background for 2 seconds on cold start
-
-**Before publishing:**
-- Delete demo accounts (`alex`, `neha`, `admin`) — see the seed block in `server.py` at the bottom
-- Change the `JWT_SECRET` in `backend/.env` to a long random string
-- Move MongoDB from local to MongoDB Atlas (free tier is enough)
-- Point `EXPO_PUBLIC_BACKEND_URL` at your hosted backend
 
 ---
 
@@ -477,17 +457,6 @@ Be upfront with evaluators about these:
 | ❌ Push notifications | Requires Firebase Cloud Messaging | Use `expo-notifications` + FCM |
 | ❌ Video/voice calls | Out of v1 spec | Add WebRTC via `react-native-webrtc` |
 | ❌ Attendance / QR / OSID | Explicitly excluded per spec | Would be v2 |
-
----
-
-## 🏆 Business Enhancement Ideas (for viva questions)
-
-If evaluators ask **"How would you monetize this?"**, mention:
-
-1. **B2B SaaS to colleges** — sell Our Space as a white-labeled platform (each college gets its own subdomain, logo, theme)
-2. **Premium student features** — pay-to-unlock solved PYQs / expert notes (Razorpay integration)
-3. **Placement portal add-on** — companies pay to post job openings visible to filtered final-year students
-4. **Ads-free tier** — optional premium student subscription
 
 ---
 
