@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { Image } from "expo-image";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -33,9 +34,9 @@ export default function Login() {
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
-      <LinearGradient colors={["#3F51B5", "#7E57C2"]} style={[styles.header, { paddingTop: insets.top + 40 }]}>
-        <MaterialCommunityIcons name="school" size={56} color="#fff" />
-        <Text style={styles.brand}>OurSpace</Text>
+      <LinearGradient colors={["#000000", "#0a0a2e"]} style={[styles.header, { paddingTop: insets.top + 30 }]}>
+        <Image source={require("../../assets/images/icon.png")} style={styles.logoImg} contentFit="contain" />
+        <Text style={styles.brand}>Our Space</Text>
         <Text style={styles.tagline}>Your campus, in one app</Text>
       </LinearGradient>
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
@@ -86,8 +87,9 @@ export default function Login() {
 }
 
 const styles = StyleSheet.create({
-  header: { paddingBottom: 40, alignItems: "center", borderBottomLeftRadius: 32, borderBottomRightRadius: 32 },
-  brand: { fontSize: 30, fontWeight: "700", color: "#fff", marginTop: spacing.sm },
+  header: { paddingBottom: 30, alignItems: "center", borderBottomLeftRadius: 32, borderBottomRightRadius: 32 },
+  logoImg: { width: 96, height: 96, marginBottom: 4 },
+  brand: { fontSize: 30, fontWeight: "700", color: "#fff", marginTop: spacing.sm, letterSpacing: 1 },
   tagline: { color: "#EEE", marginTop: 4 },
   body: { padding: spacing.lg, paddingBottom: spacing.xxl },
   h1: { fontSize: 24, fontWeight: "700", color: colors.onSurface, marginTop: spacing.lg },
