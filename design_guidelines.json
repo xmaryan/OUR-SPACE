@@ -1,0 +1,163 @@
+{
+  "app_name": "OurSpace",
+  "personality": "2 Material You / Expressive (MD3 Clean & Premium Variant)",
+  "personality_one_liner": "A premium, clean, and minimal Material Design 3 student hub focused on clarity, real-time academic collaboration, and utility.",
+  "color": {
+    "surface": "#F5F6FA",
+    "onSurface": "#1C1B1F",
+    "surfaceSecondary": "#FFFFFF",
+    "onSurfaceSecondary": "#49454F",
+    "surfaceTertiary": "#EADDFF",
+    "onSurfaceTertiary": "#21005D",
+    "surfaceInverse": "#313033",
+    "onSurfaceInverse": "#F4EFF4",
+    "brand": "#3F51B5",
+    "brandPrimary": "#3F51B5",
+    "onBrandPrimary": "#FFFFFF",
+    "brandSecondary": "#7E57C2",
+    "onBrandSecondary": "#FFFFFF",
+    "brandTertiary": "#009688",
+    "onBrandTertiary": "#FFFFFF",
+    "success": "#386A20",
+    "onSuccess": "#FFFFFF",
+    "warning": "#795900",
+    "onWarning": "#FFFFFF",
+    "error": "#B3261E",
+    "onError": "#FFFFFF",
+    "info": "#0062A0",
+    "onInfo": "#FFFFFF",
+    "border": "#CAC4D0",
+    "borderStrong": "#79747E",
+    "divider": "#E7E0EC"
+  },
+  "typography": {
+    "displayFontFamily": "Plus Jakarta Sans",
+    "textFontFamily": "Roboto Flex",
+    "scale": {
+      "sm": 12,
+      "base": 14,
+      "lg": 16,
+      "xl": 20,
+      "2xl": 24
+    }
+  },
+  "spacing": {
+    "rule": "Generous MD3 padding. Use comfortable vertical rhythms. Cards should never be flush to the edge. Use 'lg' (16pt) screen padding.",
+    "xs": 4,
+    "sm": 8,
+    "md": 12,
+    "lg": 16,
+    "xl": 24,
+    "2xl": 32,
+    "3xl": 48
+  },
+  "radius_tokens": {
+    "sm": 6,
+    "md": 12,
+    "lg": 16,
+    "pill": 999
+  },
+  "shadow_tier": "1",
+  "navigation": "bottom_tabs",
+  "icon_set": "MaterialCommunityIcons",
+  "glassmorphism": {
+    "enabled": "true",
+    "do's": [
+      "Bottom tab bar background to make it feel premium",
+      "Sticky headers over scrolling content",
+      "Hero card overlay scrim"
+    ],
+    "dont's": [
+      "Form inputs",
+      "List rows",
+      "Regular cards in lists"
+    ]
+  },
+  "platform_libraries": {
+    "glass": {
+      "ios": "expo-glass-effect",
+      "android": "expo-blur",
+      "low_end_android_fallback": "solid surfaceSecondary"
+    },
+    "image": "expo-image",
+    "blur": "expo-blur",
+    "bottom_sheet": "@gorhom/bottom-sheet",
+    "animation": "react-native-reanimated",
+    "gesture": "react-native-gesture-handler"
+  },
+  "screens": [
+    {
+      "name": "Home Dashboard",
+      "purpose": "A personalized hub providing an immediate overview of today's schedule, new notices, and quick entry points to academic tools.",
+      "states": {
+        "loading": "Shimmer loading across the entire screen layout (hero block, grid blocks) - NO spinners.",
+        "empty": "No upcoming assignments or notices: show clean tinted icon containers with a short upbeat message.",
+        "error": "Failed to load dashboard data. Clean surface-level error card with a 'Retry' pill button."
+      },
+      "layout": "1. Hero Banner: Full-width container (with lg horizontal margins, lg radius) showcasing a subtle college campus aesthetic background with a top-down gradient scrim (transparent to 80% surfaceInverse). Contains 'Welcome back, [Name]' and a quick 'Today's Timetable' summary. 2. Quick Actions Grid: 2x2 grid layout (Cards: Marks, Study Material, PYQs, Assignments). Each card is white (surfaceSecondary), 16dp radius, elevated slightly, containing a tinted icon in brandTertiary. 3. Section: Latest Notices (top 3) displayed as compact list rows. 4. Section: Upcoming Assignments card stack."
+    },
+    {
+      "name": "Study",
+      "purpose": "Central repository for academic documents, separated by categories.",
+      "states": {
+        "loading": "Shimmer placeholders replicating list rows.",
+        "empty": "Illustration of a clean document folder with 'No materials added yet' text.",
+        "error": "Retry button centered on the screen."
+      },
+      "layout": "1. Sticky Material 3 Top Tabs: Material / PYQ / Assignments. Active tab indicator in brandPrimary. 2. Content: Flat scrollable list of PDF cards. 3. Card Design: surfaceSecondary background, 16dp radius. Left: brandPrimary tinted icon container (PDF icon). Middle: Title (16pt, weight 500), Subtitle (Course/Subject, 12pt). Right: Download/Open icon button. Clicking opens via browser intent."
+    },
+    {
+      "name": "Notices Feed",
+      "purpose": "Chronological feed of college announcements with quick category filters.",
+      "states": {
+        "loading": "Shimmer effect on feed cards and category chips.",
+        "empty": "Clean clipboard illustration indicating no recent notices.",
+        "error": "Error state with 'Tap to retry' prompt."
+      },
+      "layout": "1. Sticky Header: Horizontal scroll view of pill-shaped category chips (All, Announcements, Exams, Events, etc.). Selected chip uses brandPrimary background, unselected uses surfaceSecondary with a border. 2. Feed: Vertical list of Notice Cards. 3. Notice Card: surfaceSecondary, 16dp radius. Top row: Small category tag (brandTertiary tinted) and date. Middle: Bold title (16pt), 2-line excerpt (14pt text). Bottom row: Author/Department. Generous 'md' padding inside the card."
+    },
+    {
+      "name": "Groups List & Chat",
+      "purpose": "Real-time subject-based academic communication.",
+      "states": {
+        "loading": "Shimmer skeleton for chat list or messages.",
+        "empty": "Illustration of speech bubbles (No groups joined).",
+        "error": "Connection error banner at the top of the chat list."
+      },
+      "layout": "Groups List: Standard Material list rows. Left: Group avatar (initials on brandTertiary background). Middle: Subject Name, Last message preview. Right: Timestamp, unread badge (brandPrimary). Chat Screen: Sticky glassmorphism header with Group Name. Scrollable message view. Chat Bubble Styling: User messages are brandPrimary with onBrandPrimary text, aligned right, bottom-right radius 4px. Other messages are surfaceSecondary with onSurfaceSecondary text, aligned left, bottom-left radius 4px. Sticky bottom input area with text field (pill shape) and send icon."
+    },
+    {
+      "name": "Profile",
+      "purpose": "User identity and account management.",
+      "states": {
+        "loading": "Shimmer over profile picture and detail rows.",
+        "empty": "Not applicable (Profile always has data).",
+        "error": "Failed to load user details, full-screen retry state."
+      },
+      "layout": "1. Header: Large user portrait avatar (centered) overlapping a brandSecondary tinted background banner. Name (20pt), Username/Roll Number (14pt). 2. Detail Rows: College, Course, Semester presented as clean list items with leading MaterialCommunityIcons. 3. Actions: 'Change Password' (outline pill button), 'Logout' (brandPrimary pill button, sticky at bottom)."
+    }
+  ],
+  "images": {
+    "home_hero_bg": {
+      "url": "https://images.unsplash.com/photo-1770134233415-de8146868a24?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2ODl8MHwxfHNlYXJjaHwxfHxjb2xsZWdlJTIwY2FtcHVzJTIwbW9kZXJuJTIwYXJjaGl0ZWN0dXJlJTIwYmFja2dyb3VuZHxlbnwwfHx8fDE3ODMyMjU3NzF8MA&ixlib=rb-4.1.0&q=85",
+      "dark": "https://images.unsplash.com/photo-1679653226697-2b0fbf7c17f7?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2ODl8MHwxfHNlYXJjaHwyfHxhYnN0cmFjdCUyMGluZGlnbyUyMHB1cnBsZSUyMGdyYWRpZW50JTIwdGV4dHVyZXxlbnwwfHx8fDE3ODMyMjk4Mzh8MA&ixlib=rb-4.1.0&q=85",
+      "alt": "Modern college campus building"
+    },
+    "profile_avatar_fallback": {
+      "url": "https://images.unsplash.com/photo-1590086782957-93c06ef21604?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NzR8MHwxfHNlYXJjaHwxfHx1bml2ZXJzaXR5JTIwc3R1ZGVudCUyMHBvcnRyYWl0JTIwc3R1ZGlvJTIwbGlnaHRpbmd8ZW58MHx8fHwxNzgzMjI5ODQ3fDA&ixlib=rb-4.1.0&q=85",
+      "alt": "University student portrait"
+    },
+    "profile_cover_banner": {
+      "url": "https://images.unsplash.com/photo-1557682268-e3955ed5d83f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njd8MHwxfHNlYXJjaHwyfHxhYnN0cmFjdCUyMGluZGlnbyUyMHB1cnBsZSUyMGdyYWRpZW50JTIwdGV4dHVyZXxlbnwwfHx8fDE3ODMyMjk4Mzh8MA&ixlib=rb-4.1.0&q=85",
+      "alt": "Abstract indigo and purple gradient"
+    }
+  },
+  "instructions_to_main_agent": [
+    "Strictly follow the user's requested palette: Indigo (#3F51B5), Purple (#7E57C2), Teal/Green accent (#009688), Background (#F5F6FA), and Cards (White/#FFFFFF). (Override of standard rules based on explicit user prompt).",
+    "Do NOT use standard loading spinners (ActivityIndicator) anywhere. Use purely Reanimated shimmer skeletons for all loading states.",
+    "Implement Material 3 characteristics: pill-shaped buttons (radius 999), heavily rounded cards (radius 16), and tonal surface distinctions.",
+    "For the real-time chat, emulate a clean WhatsApp style: user messages aligned right (brandPrimary), incoming messages aligned left (surfaceSecondary), with sharp interior corners (4px radius) pointing toward the sender.",
+    "Add a top-down gradient scrim (transparent to surfaceInverse) on the `home_hero_bg` to ensure the greeting text stays readable.",
+    "Apply `expo-blur` (glass effect) to the bottom tab bar and sticky headers to provide a premium feel, ensuring content gracefully scrolls underneath."
+  ]
+}
